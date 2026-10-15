@@ -250,9 +250,10 @@ set_target_properties(dingosdk_runtime PROPERTIES OUTPUT_NAME "ReSkate" PREFIX "
 # Rust library on librespot, built by cargo and linked into ReSkate.dll. Without cargo the DLL
 # is built without it, and Spotify is played through its own app. (Not in Debug builds: the
 # library is built with the release C runtime.)
+option(DINGOSDK_ENABLE_SPOTIFY_DEVICE "Build the optional Rust Spotify Connect integration" ON)
 find_program(DINGOSDK_CARGO cargo HINTS "$ENV{USERPROFILE}/.cargo/bin")
 set(dingosdk_spotify_dir "${PROJECT_SOURCE_DIR}/SpotifyHelper")
-if(WIN32 AND DINGOSDK_CARGO AND EXISTS "${dingosdk_spotify_dir}/Cargo.toml")
+if(WIN32 AND DINGOSDK_ENABLE_SPOTIFY_DEVICE AND DINGOSDK_CARGO AND EXISTS "${dingosdk_spotify_dir}/Cargo.toml")
     set(dingosdk_spotify_lib "${dingosdk_spotify_dir}/target/release/reskate_spotify.lib")
     add_custom_command(OUTPUT "${dingosdk_spotify_lib}"
         COMMAND "${DINGOSDK_CARGO}" build --release --lib

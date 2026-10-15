@@ -24,6 +24,8 @@ ctest --test-dir build/vr-v1 -C Release --output-on-failure
 
 This preset builds the VR and multiplayer regression tests, disables binary
 auto-update for local development and disables uploads to upstream's crash account.
+It explicitly disables the optional Rust Spotify Connect device so a clean VR
+build does not depend on a pre-populated Cargo cache; external-player audio remains.
 The VR source is already part of the Windows build; the historical
 RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 
@@ -56,8 +58,10 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 ## Local setup findings
 
 Steam skate. is installed at C:\Program Files (x86)\Steam\steamapps\common\Skate.
-Its executable does not match the supported game contract. Use a separate install
-for the supported build; preserve the Steam installation.
+Its executable does not match the supported game contract. An existing ReSkate
+copy at C:\Program Files (x86)\Steam\steamapps\content\app_3354750\ReSkate has the
+exact supported executable hash. Its game data was copied into
+C:\Users\Daniel\Games\ReSkateVR, excluding its mod settings and mod folders.
 SteamVR is the registered OpenXR runtime. GitHub account requested: damorimf.
 Runtime playtesting requires the user's connected Quest 3.
 

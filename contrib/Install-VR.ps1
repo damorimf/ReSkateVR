@@ -20,7 +20,11 @@ foreach ($file in $manifest.files) {
         throw "Package checksum mismatch: $($file.path)"
     }
 }
-if (Get-Process Skate,ReSkateLauncher -ErrorAction SilentlyContinue) { throw 'Close skate. and ReSkateLauncher before installing' }
+$active = Get-Process Skate,ReSkateLauncher -ErrorAction SilentlyContinue | Where-Object {
+    $_.Path -and [IO.Path]::GetDirectoryName($_.Path).TrimEnd('\').Equals(
+        $install.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)
+}
+if ($active) { throw 'Close skate. and ReSkateLauncher in the target installation before installing' }
 $game = Join-Path $install 'Skate.exe'
 $supported = (Test-Path -LiteralPath $game) -and
     ((Get-FileHash -LiteralPath $game -Algorithm SHA256).Hash.ToLowerInvariant() -eq $manifest.gameSha256)
