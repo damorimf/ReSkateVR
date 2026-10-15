@@ -1,6 +1,7 @@
 #include "Engine/Core/Platform/launcher_support.h"
 #include "skate_menu_internal.h"
 #include "Extension/Skater/drone_flight.h"
+#include "Extension/VR/vr.h"
 #include "skate_menu.h"
 #include "modding_menu.h"
 #include "skate_style.h"
@@ -314,6 +315,8 @@ void load_skate_fonts(SkateMenu& menu) {
     menu.heading = font(L"FONT_HEADING", "arialbd.ttf", 22);
     menu.title = font(L"FONT_BRUSH", "arialbi.ttf", 44);
     menu.mono = font(nullptr, "consola.ttf", 15);
+    menu.vr_fonts = {font(L"FONT_BODY", "arial.ttf", 34), font(L"FONT_HEADING", "arialbd.ttf", 34),
+        font(L"FONT_BRUSH", "arialbi.ttf", 88), font(L"FONT_HEADING", "arialbd.ttf", 44), font(nullptr, "consola.ttf", 30)};
 }
 
 void draw_skate_menu(SkateMenu& menu, const Model& model, const CallbacksV3& callbacks,
@@ -331,12 +334,19 @@ void draw_skate_menu(SkateMenu& menu, const Model& model, const CallbacksV3& cal
     menu.last_menu_frame = ImGui::GetFrameCount();
     auto& io = ImGui::GetIO();
     ui_scale = std::clamp(model.menu_scale, min_menu_scale, max_menu_scale);
+    const bool in_vr = vr::status().running && menu.vr_fonts[0];
+    const std::array<ImFont*, 5> desktop_fonts{menu.body, menu.bold, menu.title, menu.heading, menu.mono};
+    if (in_vr) {
+        ui_scale = std::max(ui_scale, std::clamp(io.DisplaySize.y / 1440.0f, 1.0f, 2.0f));
+        menu.body = menu.vr_fonts[0]; menu.bold = menu.vr_fonts[1]; menu.title = menu.vr_fonts[2];
+        menu.heading = menu.vr_fonts[3]; menu.mono = menu.vr_fonts[4];
+    }
     const auto restore_font_scale = io.FontGlobalScale;
     // Widget text follows the global font scale; the pixel layout below follows px().
-    io.FontGlobalScale = ui_scale;
+    io.FontGlobalScale = ui_scale * (in_vr ? 0.5f : 1.0f);
     const ImVec2 maximum(std::max(px(400.0f), io.DisplaySize.x - 24), std::max(px(320.0f), io.DisplaySize.y - 24));
-    ImGui::SetNextWindowSize(ImVec2(std::min(px(1000.0f), maximum.x), std::min(px(700.0f), maximum.y)), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * .5f, io.DisplaySize.y * .5f), ImGuiCond_FirstUseEver, ImVec2(.5f, .5f));
+    ImGui::SetNextWindowSize(ImVec2(std::min(px(1000.0f), maximum.x), std::min(px(700.0f), maximum.y)), in_vr ? ImGuiCond_Always : ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x * .5f, io.DisplaySize.y * .5f), in_vr ? ImGuiCond_Always : ImGuiCond_FirstUseEver, ImVec2(.5f, .5f));
     ImGui::SetNextWindowSizeConstraints(ImVec2(std::min(px(680.0f), maximum.x), std::min(px(480.0f), maximum.y)), maximum);
     ImGui::PushFont(menu.body);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -472,6 +482,8 @@ void draw_skate_menu(SkateMenu& menu, const Model& model, const CallbacksV3& cal
     ImGui::PopStyleVar(9);
     ImGui::PopFont();
     io.FontGlobalScale = restore_font_scale;
+    menu.body = desktop_fonts[0]; menu.bold = desktop_fonts[1]; menu.title = desktop_fonts[2];
+    menu.heading = desktop_fonts[3]; menu.mono = desktop_fonts[4];
 }
 }
 

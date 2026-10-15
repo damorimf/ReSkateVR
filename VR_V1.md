@@ -32,7 +32,7 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 ## V1 completion gates
 
 - [x] Rebased integration compiles with warnings as errors (local MSVC Release build).
-- [x] VR pose, camera transition, camera cycle and multiplayer regressions pass (50/50 local CTest checks).
+- [x] VR pose, camera transition, camera cycle, saved graphics settings and multiplayer regressions pass (51 local CTest checks).
 - [ ] Stereo disocclusion handling improved and checked in the headset.
 - [x] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
 - [x] Separate local install contains the supported game build and VR binaries.
@@ -41,6 +41,7 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 - [ ] First/third person, walking, grabs, bails, map changes and recenter tested.
 - [ ] Menus, controller input, shutdown and restarting the game tested.
 - [ ] Performance and comfort settings validated in actual gameplay.
+- [ ] User confirms clear game/menu text and real positional leaning in the headset.
 
 ## Changes under development
 
@@ -78,6 +79,31 @@ recenter, controls, bails, map changes and sustained performance remains pending
 
 The installer was exercised against an unsupported-game fixture, a tampered
 binary and a repeated install: rejection and backup checks passed.
+
+## Clarity and usability iteration
+
+The first headset test confirmed head rotation and Touch input but the user
+reported blur, a 3DoF feeling, visible body geometry and unreadable/janky menus.
+This is not accepted as V1 quality.
+
+- The saved image was 1800x1800 (index 16); the OpenXR recommendation was
+  2528x2704 per eye. Motion blur and depth of field were enabled.
+- ReSkateVRSetup.exe provides 2304, 2592 and 2880 square profiles. It uses the
+  launcher's existing container writer, backs up original settings and sets native
+  resolution, windowed mode, motion blur/DOF/HDR/upscaling off. It lowers shadows,
+  effects and post processing to leave GPU time for the sharper image.
+- The VR menu uses separate Setup, Camera, Image, Input and Advanced pages, with
+  fonts rasterized at twice the desktop size and a larger responsive layout.
+- Tracking diagnostics report valid/tracked positional input, displacement from
+  recenter and translation actually applied to the camera. Position was already
+  enabled in the saved profile, so the reported 3DoF feeling requires another test.
+  Tracking dropouts now hold the last valid translation instead of resetting it.
+- NxRoot FeetOnly 1.31.2 is installed in the local VR copy as its only cosmetic mod.
+  Source: https://thunderstore.io/c/reskate/p/NxRoot/FeetOnly/
+  Download SHA-256: 6096ca422872716f3419f8867e3e84278839457e59df8bd5fa7d1e9e11cd7506.
+  The mod is a separate dependency, not bundled into the VR binary package.
+- Local test configuration: DualSense (Touch gameplay input off), positional
+  tracking on, world scale 1, Feet only on board and on foot, larger menu panel.
 
 ## Packaging and installation
 

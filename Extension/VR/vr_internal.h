@@ -93,6 +93,10 @@ struct Shared {
     std::atomic<float> camera_fov_degrees{0.0f};  // native FOV for that write
     std::atomic<std::uint64_t> camera_frames{0};
     std::atomic<DWORD> camera_thread{0};
+    std::atomic<bool> position_valid{false}, position_tracked{false};
+    std::array<std::atomic<float>, 3> head_motion{}, camera_motion{};
+    std::mutex position_mutex;
+    math::TrackedPosition tracked_position;
     // Bumped by recenter(); each consumer keeps the value it last applied.
     std::atomic<std::uint64_t> recenter_generation{1};
     // Comfort vignette amount for the eye images (0 none), set by the camera.

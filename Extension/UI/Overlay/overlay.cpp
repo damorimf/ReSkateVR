@@ -5,6 +5,7 @@
 #include "park_previews.h"
 #include "chat_emotes.h"
 #include "Extension/VR/vr.h"
+#include "Extension/VR/vr_display_modes.h"
 
 using namespace dingosdk::overlay::detail;
 namespace dingosdk::overlay::detail {
@@ -350,7 +351,7 @@ HRESULT STDMETHODCALLTYPE set_fullscreen(IDXGISwapChain* chain, BOOL fullscreen,
 // launcher window size (the VR setup), square sizes from low to high end are
 // added to that list, plus the requested size, so they can be picked in the
 // game's own resolution menu.
-constexpr UINT vr_sizes[]{1440, 1600, 1800, 2016, 2304, 2592, 2880, 3240, 3600, 3840};
+constexpr auto& vr_sizes = dingosdk::vr::display::square_sizes;
 std::vector<std::pair<UINT, UINT>> extra_modes() {
     const auto& s = state();
     std::vector<std::pair<UINT, UINT>> sizes;

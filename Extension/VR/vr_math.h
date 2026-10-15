@@ -60,6 +60,16 @@ struct ViewTransition {
     }
 };
 
+// Hold translation during an orientation-only interval instead of jumping back
+// to the recenter origin. Valid positional tracking is never smoothed.
+struct TrackedPosition {
+    Vec3 value{};
+    Vec3 sample(const Vec3& position, bool valid) {
+        if (valid && std::all_of(position.begin(), position.end(), [](float v) { return std::isfinite(v); })) value = position;
+        return value;
+    }
+};
+
 // Rotation about +Y by `heading` radians; heading 0 looks down -Z.
 inline Quat yaw(float heading) { return {0, std::sin(heading / 2), 0, std::cos(heading / 2)}; }
 

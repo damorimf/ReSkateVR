@@ -41,6 +41,14 @@ Quat pitch(float radians) { return {std::sin(radians / 2), 0, 0, std::cos(radian
 }
 
 int main() {
+    {
+        TrackedPosition tracking;
+        CHECK(near(tracking.sample({9, 9, 9}, false), Vec3{}));
+        CHECK(near(tracking.sample({0.2f, 1.6f, -0.3f}, true), Vec3{0.2f, 1.6f, -0.3f}));
+        CHECK(near(tracking.sample({}, false), Vec3{0.2f, 1.6f, -0.3f}));
+        CHECK(near(tracking.sample({0.4f, 1.5f, -0.6f}, true), Vec3{0.4f, 1.5f, -0.6f}));
+        CHECK(near(tracking.sample({NAN, 0, 0}, true), Vec3{0.4f, 1.5f, -0.6f}));
+    }
     // View changes are continuous, interruptible and independent of update rate.
     {
         ViewTransition rig;

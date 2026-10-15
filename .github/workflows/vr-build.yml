@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: vr-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   windows:
     runs-on: windows-2022
@@ -14,7 +17,7 @@ jobs:
       - name: Configure VR and regression tests
         run: cmake --preset vr-v1
       - name: Build
-        run: cmake --build --preset vr-v1-release --parallel 4
+        run: cmake --build --preset vr-v1-release --parallel 2
       - name: Test
         run: ctest --test-dir build/vr-v1 -C Release --output-on-failure
       - name: Package candidate with OpenXR loader and licenses

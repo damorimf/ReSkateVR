@@ -198,6 +198,8 @@ bool game_menu_open() noexcept;
 struct Status {
     bool loader = false, instance = false, session = false, running = false, focused = false;
     bool camera_active = false, theater_active = false;
+    bool positional_enabled = false, position_valid = false, position_tracked = false;
+    std::array<float, 3> head_motion{}, camera_motion{};
     std::string runtime, system, state = "off", message;
     std::uint32_t image_width = 0, image_height = 0;
     std::uint32_t recommended_width = 0, recommended_height = 0;

@@ -287,15 +287,20 @@ bool locate(Shared& s, XrTime display_time, std::array<XrView, 2>& views, math::
     if (XR_FAILED(s.xr.locate_space(s.view_space, s.local_space, display_time, &location)) ||
         !(location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT)) return false;
     head = to_pose(location.pose);
-    if (!(state.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) ||
-        !(location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT)) {
-        // Rotation-only tracking: keep the eyes' offsets around a fixed head.
+    const bool position_valid = (state.viewStateFlags & XR_VIEW_STATE_POSITION_VALID_BIT) &&
+        (location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT);
+    s.position_valid.store(position_valid, std::memory_order_relaxed);
+    s.position_tracked.store((state.viewStateFlags & XR_VIEW_STATE_POSITION_TRACKED_BIT) &&
+        (location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT), std::memory_order_relaxed);
+    {
+        std::lock_guard lock(s.position_mutex);
+        const auto held = s.tracked_position.sample(head.position, position_valid);
         for (auto& view : views) {
-            view.pose.position.x -= location.pose.position.x;
-            view.pose.position.y -= location.pose.position.y;
-            view.pose.position.z -= location.pose.position.z;
+            view.pose.position.x += held[0] - head.position[0];
+            view.pose.position.y += held[1] - head.position[1];
+            view.pose.position.z += held[2] - head.position[2];
         }
-        head.position = {};
+        head.position = held;
     }
     return true;
 }
@@ -661,6 +666,10 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
         const auto result = c.outside ? math::compose(base, c.bail_heading, true, eye, head, c.anchor, options.positional, options.world_scale)
             : math::compose(base, c.heading, options.level_horizon, eye, head, c.anchor,
             options.positional, options.world_scale, 0, 0, 0, tilt ? &*tilt : nullptr);
+        for (std::size_t i = 0; i < 3; ++i) {
+            s.head_motion[i].store(head.position[i] - c.anchor.position[i], std::memory_order_relaxed);
+            s.camera_motion[i].store(result[12 + i] - base[12 + i], std::memory_order_relaxed);
+        }
         // Only the lanes we write; the fourth lane of each row is the game's and may hold anything.
         for (std::size_t i = 0; i < 16; ++i)
             if (i % 4 != 3 && !std::isfinite(result[i])) {

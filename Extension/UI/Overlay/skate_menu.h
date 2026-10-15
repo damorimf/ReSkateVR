@@ -105,6 +105,7 @@ struct SkateMenu {
     ImFont* title = nullptr;    // brushed page titles
     ImFont* heading = nullptr;  // tile and section headers
     ImFont* mono = nullptr;
+    std::array<ImFont*, 5> vr_fonts{}; // body, bold, title, heading, mono at twice the desktop size
 };
 void load_skate_fonts(SkateMenu& menu);
 void draw_skate_menu(SkateMenu& menu, const Model& model, const CallbacksV3& callbacks,

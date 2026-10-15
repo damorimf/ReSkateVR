@@ -250,6 +250,12 @@ void teardown(const std::string& reason, double retry) {
     r.system = XR_NULL_SYSTEM_ID;
     r.state = XR_SESSION_STATE_UNKNOWN;
     r.running = r.exit_requested = r.frame_begun = false;
+    {
+        std::lock_guard lock(s.position_mutex);
+        s.tracked_position = {};
+    }
+    s.position_valid.store(false, std::memory_order_relaxed);
+    s.position_tracked.store(false, std::memory_order_relaxed);
     r.eye_ready = {};
     r.history.clear();
     r.queue.Reset();
@@ -577,6 +583,10 @@ void publish_rates(double now) {
             camera_active(now) ? "VR camera" : snapshot.theater_active ? "flat screen" : "idle",
             snapshot.image_width, snapshot.image_height, r.image_format, fov, current_settings().frame_lag, camera_thread,
             GetCurrentThreadId()));
+        log_info(std::format("tracking: {}, positional {}; head offset ({:.3f}, {:.3f}, {:.3f}) m; applied camera ({:.3f}, {:.3f}, {:.3f}) m.",
+            s.position_valid.load() ? (s.position_tracked.load() ? "6DoF tracked" : "6DoF inferred") : "rotation only",
+            current_settings().positional ? "on" : "off", s.head_motion[0].load(), s.head_motion[1].load(), s.head_motion[2].load(),
+            s.camera_motion[0].load(), s.camera_motion[1].load(), s.camera_motion[2].load()));
         r.pairing = {};
     }
     update_status([&](Status& st) {
@@ -685,10 +695,19 @@ bool screen_layer(const Settings& options, ID3D12Resource* image, std::uint32_t 
 }
 
 Status status() {
-    const bool enabled = current_settings().enabled;
+    const auto options = current_settings();
+    const bool enabled = options.enabled;
     std::lock_guard lock(status_mutex());
     auto result = published();
     result.camera_active = enabled && result.running && camera_active(seconds_now());
+    const auto& s = shared();
+    result.positional_enabled = options.positional;
+    result.position_valid = result.camera_active && s.position_valid.load(std::memory_order_relaxed);
+    result.position_tracked = result.camera_active && s.position_tracked.load(std::memory_order_relaxed);
+    for (std::size_t i = 0; i < 3; ++i) {
+        result.head_motion[i] = s.head_motion[i].load(std::memory_order_relaxed);
+        result.camera_motion[i] = s.camera_motion[i].load(std::memory_order_relaxed);
+    }
     if (!enabled && !result.instance) result.state = "off";
     return result;
 }

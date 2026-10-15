@@ -33,7 +33,7 @@ if (-not $supported -and -not $PrepareGame) {
 }
 New-Item -ItemType Directory -Path $install -Force | Out-Null
 $backup = Join-Path $install ('VR-backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
-foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','openxr_loader.dll','vr-package.json','VR_V1.md','LICENSE')) {
+foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','ReSkateVRSetup.exe','openxr_loader.dll','vr-package.json','VR_V1.md','LICENSE')) {
     $destination = Join-Path $install $name
     if (Test-Path -LiteralPath $destination) {
         New-Item -ItemType Directory -Path $backup -Force | Out-Null
@@ -42,7 +42,7 @@ foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','openxr_loader.dll','vr-
     Copy-Item -LiteralPath (Join-Path $package $name) -Destination $destination
 }
 Copy-Item -LiteralPath (Join-Path $package 'licenses') -Destination $install -Recurse -Force
-foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','openxr_loader.dll')) {
+foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','ReSkateVRSetup.exe','openxr_loader.dll')) {
     if ((Get-FileHash -LiteralPath (Join-Path $install $name)).Hash -ne
         (Get-FileHash -LiteralPath (Join-Path $package $name)).Hash) { throw "Install verification failed: $name" }
 }

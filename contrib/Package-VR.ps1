@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $build = [IO.Path]::GetFullPath((Join-Path $repo $BuildDirectory))
 $output = [IO.Path]::GetFullPath((Join-Path $repo $OutputDirectory))
-foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll')) {
+foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll', 'ReSkateVRSetup.exe')) {
     if (-not (Test-Path -LiteralPath (Join-Path $build $name))) { throw "Missing build output: $name" }
 }
 $commit = (git -C $repo rev-parse HEAD).Trim()
@@ -32,7 +32,7 @@ if ((Get-FileHash -LiteralPath $download -Algorithm SHA256).Hash.ToLowerInvarian
 $loader = Join-Path $output 'openxr-1.1.63'
 Expand-Archive -LiteralPath $download -DestinationPath $loader -Force
 Copy-Item -LiteralPath (Join-Path $loader 'x64/bin/openxr_loader.dll') -Destination $stage
-foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll')) {
+foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll', 'ReSkateVRSetup.exe')) {
     Copy-Item -LiteralPath (Join-Path $build $name) -Destination $stage
 }
 Copy-Item -LiteralPath (Join-Path $repo 'LICENSE'), (Join-Path $repo 'VR_V1.md') -Destination $stage
