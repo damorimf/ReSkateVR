@@ -230,6 +230,7 @@ struct Camera {
     // they took over (from the on-foot heading), and whether they drove the view last update.
     math::EyesHeading eyes;
     math::EyesPosition eyes_place;
+    math::ComfortPosition comfort_place;
     float eyes_blend = 0;
     bool eyes_on = false;
     math::TiltRig tilt_rig;
@@ -350,6 +351,7 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             c.heading_rig = {};
             c.eyes = {};
             c.eyes_place = {};
+            c.comfort_place = {};
             c.eyes_on = false;
             c.tilt_rig = {};
             c.view_transition = {};
@@ -365,6 +367,7 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             c.heading_rig = {};
             c.eyes = {};
             c.eyes_place = {};
+            c.comfort_place = {};
             c.eyes_on = false;
             c.tilt_rig = {};
             c.view_transition = {};
@@ -427,7 +430,16 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             if (turn != 0 && c.outside) c.bail_heading = math::wrap(c.bail_heading + turn);
             else if (turn != 0 && look) c.heading = math::wrap(c.heading + turn);
         }
-        if (body && first) {
+        if (body && first && options.comfort_camera) {
+            if (!look) {
+                // Board and head animation can spin independently of locomotion.
+                const float wanted = std::isfinite(c.travel) ? c.travel :
+                    std::isfinite(c.heading) ? c.heading : body->chest_heading;
+                c.heading = math::follow_snap(c.heading_rig, wanted, rig_elapsed,
+                    std::max(options.turn_smoothing, 0.25f), 0.0f, 0.0f);
+            } else c.heading_rig.value = c.heading;
+            c.eyes_on = false;
+        } else if (body && first) {
             const float eyes = math::eyes_heading(c.eyes, first_person::orientation(matrix), frame_end ? rig_elapsed : 0.0f);
             if (!look) {
                 // Taking over from the on-foot heading (or at the start), the difference fades over 0.4 s.
@@ -455,8 +467,12 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             // The view's position: the body origin plus the head's offset from it through one
             // continuous filter (math::eyes_position): bob smoothed, ollies and flips passed,
             // crouches scaled by Crouch.
-            const auto eyes_at = math::eyes_position(c.eyes_place, {matrix[12], matrix[13], matrix[14]}, body->origin,
-                frame_end ? rig_elapsed : 0.0f, options.crouch_follow);
+            const auto eyes_at = first && options.comfort_camera
+                ? math::comfort_position(c.comfort_place, {matrix[12], matrix[13], matrix[14]}, body->origin,
+                    frame_end ? rig_elapsed : 0.0f, options.crouch_follow,
+                    !body->on_board || (body->board[5] > 0.7f && body->physics_state < 200))
+                : math::eyes_position(c.eyes_place, {matrix[12], matrix[13], matrix[14]}, body->origin,
+                    frame_end ? rig_elapsed : 0.0f, options.crouch_follow);
             for (std::size_t i = 0; i < 3; ++i) base[12 + i] = eyes_at[i];
         }
         {

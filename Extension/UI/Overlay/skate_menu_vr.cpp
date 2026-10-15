@@ -197,6 +197,8 @@ void vr_controls(SkateMenu& menu, const Model& model) {
 
         // ---- Comfort.
         begin_card(menu, "vr-comfort", "COMFORT");
+        if (toggle_row(menu, "Steady camera", "Follow your direction of travel without animated head bob or trick spins. Real headset movement stays responsive.", options.comfort_camera))
+            changed = true;
         slider(menu, "Comfort vignette", "Darkens the edges while the view turns without your head (turns, flips, bails). 0 is off.",
             options.comfort_vignette, 0.0f, Limits::comfort_vignette_max, options.comfort_vignette > 0 ? "%.2f" : "Off",
             set(options.comfort_vignette));

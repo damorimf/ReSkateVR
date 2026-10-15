@@ -837,7 +837,12 @@ void on_present(IDXGISwapChain3* chain, ID3D12CommandQueue* queue) noexcept {
                     else failed = true;
                 }
                 if (!failed && r.stereo.has_kept() && r.stereo.has_kept_depth() && !r.depth_pending && r.kept_record &&
-                    r.kept_record->both) {
+                    r.kept_record->both &&
+                    (!r.eye_ready[0] || !r.eye_ready[1] || r.eye_records[0].sequence != r.kept_record->sequence ||
+                        r.eyes[0].width != desc.Width || r.eyes[0].height != desc.Height)) {
+                    // Reuse the completed eye images on presents without a new game camera
+                    // frame. OpenXR still receives every headset frame and reprojects using
+                    // the original image pose; repeating the depth shader only wastes GPU time.
                     const auto& record = *r.kept_record;
                     StereoParams params;
                     float separation = 0;

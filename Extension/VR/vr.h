@@ -112,6 +112,8 @@ struct Settings {
     // How much crouching (before an ollie, pushing) lowers the view, 0 none, 1 all of the
     // skater's drop.
     float crouch_follow = 0.5f;
+    // Follow locomotion without inheriting animated head bob or trick spins.
+    bool comfort_camera = true;
     // How much of the skater first person hides in VR, on the board (hide_body) and on
     // foot (hide_body_foot): 0 the head, 1 the neck and head (no collar or hood across
     // the view), 2 the upper torso, neck and head with the arms kept (the shoulders move

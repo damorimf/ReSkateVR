@@ -6,6 +6,7 @@
 #include "Engine/Game/Build/20260929/no_bail.h"
 #include "free_flight.h"
 #include "Extension/VR/vr.h"
+#include "Extension/VR/vr_costume.h"
 #include "Engine/Core/Log/logging.h"
 #include "Extension/UI/Overlay/overlay.h"
 #include <mutex>
@@ -131,8 +132,11 @@ void first_person_hide_head(std::uintptr_t base, std::uintptr_t component, bool 
     const bool bail_view = vr_options.enabled && vr::whole_body_view();
     // On foot its own setting: the hands carry the board there, and with the arms folded
     // into the waist (Waist up) the carried board jitters inside it.
-    const int hide = vr_options.enabled
-        ? std::clamp(on_board ? vr_options.hide_body : vr_options.hide_body_foot, 0, 3) : 0; // 4 (feet only): the costume
+    const int requested_hide = on_board ? vr_options.hide_body : vr_options.hide_body_foot;
+    // FeetOnly supplies its own invisible body. Shrinking the waist as well can
+    // deform descendants and the carried board. Keep the usual head-only hide.
+    const int hide = vr_options.enabled && requested_hide == vr::Limits::hide_feet_only && vr::feet_only_installed()
+        ? 0 : vr_options.enabled ? std::clamp(requested_hide, 0, 3) : 0;
     first_person_keep_arms(pose.buffer, vr_options.enabled && vr_options.view_mode == 0 && hide == 2 && !bail_view);
     // VR third person and the bail camera show the whole skater.
     const bool show_all = vr_options.enabled && (vr_options.view_mode == 1 || bail_view);

@@ -45,6 +45,7 @@ constexpr const char* look_turn = "VR.LookTurn";
 constexpr const char* look_turn_style = "VR.LookTurnStyle";
 constexpr const char* smooth_turn_speed = "VR.SmoothTurnSpeed";
 constexpr const char* grab_view = "VR.GrabView";
+constexpr const char* comfort_camera = "VR.ComfortCamera";
 constexpr const char* crouch_follow = "VR.CrouchFollow";
 constexpr const char* grab_body = "VR.GrabBody";
 constexpr const char* bail_camera = "VR.BailCamera";
@@ -114,6 +115,7 @@ const std::array fields{
     Field{.key = key::look_turn_style, .whole = &Settings::look_turn_style},
     Field{.key = key::smooth_turn_speed, .real = &Settings::smooth_turn_speed},
     Field{.key = key::grab_view, .flag = &Settings::grab_view},
+    Field{.key = key::comfort_camera, .flag = &Settings::comfort_camera},
     Field{.key = key::crouch_follow, .real = &Settings::crouch_follow},
     Field{.key = key::grab_body, .flag = &Settings::grab_body},
     Field{.key = key::bail_camera, .flag = &Settings::bail_camera},

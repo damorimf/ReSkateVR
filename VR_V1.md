@@ -98,12 +98,32 @@ This is not accepted as V1 quality.
   recenter and translation actually applied to the camera. Position was already
   enabled in the saved profile, so the reported 3DoF feeling requires another test.
   Tracking dropouts now hold the last valid translation instead of resetting it.
-- NxRoot FeetOnly 1.31.2 is installed in the local VR copy as its only cosmetic mod.
+- NxRoot FeetOnly 1.31.2 is installed in the local VR copy alongside the user's added mods.
   Source: https://thunderstore.io/c/reskate/p/NxRoot/FeetOnly/
   Download SHA-256: 6096ca422872716f3419f8867e3e84278839457e59df8bd5fa7d1e9e11cd7506.
   The mod is a separate dependency, not bundled into the VR binary package.
 - Local test configuration: DualSense (Touch gameplay input off), positional
   tracking on, world scale 1, Feet only on board and on foot, larger menu panel.
+
+## Comfort/performance follow-up
+
+The second Quest 3 test confirmed clearer visuals and working 6DoF, but the user
+reported camera shake, stutter, board motion and a partially visible body. This
+candidate is not yet headset-validated for comfort or frame pacing.
+
+- Steady camera (enabled by default, `vr.comfort_camera`) follows smoothed travel
+  heading and body origin instead of animated head spins/sway. It holds a
+  calibrated eye height, filters crouch, and leaves real headset motion untouched.
+- Depth stereo reuses completed eye images between new game camera records,
+  avoiding repeated depth reprojection while retaining every OpenXR submission.
+- FeetOnly uses head-only joint hiding when its costume is available, avoiding
+  redundant waist shrinking that could distort descendant joints or the board.
+- All 51 local regression tests pass, including animation rejection, immediate
+  locomotion/headset lean, and frame-rate-independent crouch filtering.
+- Next local test disables bail/grab camera changes, uses Feet only on board and
+  on foot, and lowers the requested square image size from 2880 to 2304. Actual
+  backbuffer dimensions must be checked: previous requests produced images 25%
+  larger, consistent with a DPI scaling issue that remains under investigation.
 
 ## Packaging and installation
 

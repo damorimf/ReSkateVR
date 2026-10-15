@@ -199,6 +199,26 @@ inline Vec3 eyes_position(EyesPosition& e, const Vec3& head, const Vec3& origin,
     return first_person::add(origin, {e.offset[0], height, e.offset[2]});
 }
 
+// Keep locomotion immediate while rejecting the animation's lateral sway and
+// fast vertical bob. The reference height is calibrated once, then held until
+// a recenter/teleport resets the rig. Tracking-space head motion is added later.
+struct ComfortPosition {
+    bool ready = false;
+    float height = 0, drop = 0;
+};
+inline Vec3 comfort_position(ComfortPosition& rig, const Vec3& head, const Vec3& origin,
+    float elapsed, float crouch, bool upright) {
+    const float offset = head[1] - origin[1];
+    if (!rig.ready) {
+        rig = {true, std::clamp(offset, 0.25f, 2.0f), 0};
+    }
+    if (elapsed > 0) {
+        const float wanted = upright ? std::clamp(rig.height - offset, 0.0f, 0.35f) * crouch : 0.0f;
+        rig.drop += (wanted - rig.drop) * (1 - std::exp(-std::min(elapsed, 0.5f) / 0.5f));
+    }
+    return first_person::add(origin, {0, rig.height - rig.drop, 0});
+}
+
 inline Quat steady_tilt(TiltRig& rig, const Quat& head, float elapsed, float seconds, float fast) {
     const auto tilt = untwisted(head);
     if (!rig.ready) {

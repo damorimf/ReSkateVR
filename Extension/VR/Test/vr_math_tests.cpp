@@ -41,6 +41,33 @@ Quat pitch(float radians) { return {std::sin(radians / 2), 0, 0, std::cos(radian
 }
 
 int main() {
+    // Animation can sway or flip around the origin without moving a comfort
+    // camera. Locomotion and real headset translation still reach it immediately.
+    {
+        ComfortPosition rig;
+        CHECK(near(comfort_position(rig, {0, 1.6f, 0}, {}, 0, 0, true), Vec3{0, 1.6f, 0}));
+        for (int i = 0; i < 120; ++i) {
+            const float sway = std::sin(static_cast<float>(i)) * 0.25f;
+            const Vec3 origin{static_cast<float>(i), 2, -3};
+            const auto at = comfort_position(rig, {origin[0] + sway, 3.6f + sway, -3 + sway}, origin, 1.0f / 120, 0, true);
+            CHECK(near(at, Vec3{origin[0], 3.6f, -3}));
+        }
+        const auto flipped = comfort_position(rig, {10, -2, -3}, {10, 2, -3}, 1.0f / 60, 1, false);
+        CHECK(near(flipped, Vec3{10, 3.6f, -3}));
+        const Pose lean{yaw(0), {0.2f, 0.1f, -0.3f}};
+        const auto leaned = compose(camera(yaw(0), flipped), 0, true, lean, lean, {}, true, 1);
+        CHECK(near(row(leaned, 3), first_person::add(flipped, lean.position)));
+        // Crouch filtering gives the same result at different game frame rates.
+        ComfortPosition a, b;
+        comfort_position(a, {0, 1.6f, 0}, {}, 0, 1, true);
+        comfort_position(b, {0, 1.6f, 0}, {}, 0, 1, true);
+        Vec3 x{}, y{};
+        for (int i = 0; i < 60; ++i) x = comfort_position(a, {0, 1.2f, 0}, {}, 1.0f / 60, 1, true);
+        for (int i = 0; i < 120; ++i) y = comfort_position(b, {0, 1.2f, 0}, {}, 1.0f / 120, 1, true);
+        CHECK(near(x, y));
+        CHECK(x[1] < 1.6f && x[1] > 1.25f);
+    }
+
     {
         TrackedPosition tracking;
         CHECK(near(tracking.sample({9, 9, 9}, false), Vec3{}));

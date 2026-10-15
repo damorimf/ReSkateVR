@@ -145,6 +145,7 @@ void register_vr_commands(Commands& registry) {
     whole(registry, "vr.turn_style", "Right-stick turns: 0 snap, 1 smooth", &Settings::look_turn_style, 0, 1);
     real(registry, "vr.turn_speed", "Smooth right-stick turns: degrees per second", &Settings::smooth_turn_speed,
         Limits::smooth_turn_speed_min, Limits::smooth_turn_speed_max);
+    flag(registry, "vr.comfort_camera", "Follow travel without animated head bob or trick spins", &Settings::comfort_camera);
     real(registry, "vr.crouch", "How much crouching lowers the view (0 none, 1 all)", &Settings::crouch_follow, 0.0f, 1.0f);
     flag(registry, "vr.grab_view", "Grabs: the view moves outside, behind the skater", &Settings::grab_view);
     flag(registry, "vr.grab_body", "Grabs: first person shows the whole skater", &Settings::grab_body);
