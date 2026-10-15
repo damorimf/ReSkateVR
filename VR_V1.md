@@ -29,7 +29,7 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 
 ## V1 completion gates
 
-- [ ] Rebased integration compiles with warnings as errors.
+- [x] Rebased integration compiles with warnings as errors (local MSVC Release build).
 - [x] VR pose, camera transition, camera cycle and multiplayer regressions pass (50/50 local CTest checks).
 - [ ] Stereo disocclusion handling improved and checked in the headset.
 - [ ] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
