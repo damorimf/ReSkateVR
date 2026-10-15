@@ -34,8 +34,8 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 - [x] Rebased integration compiles with warnings as errors (local MSVC Release build).
 - [x] VR pose, camera transition, camera cycle and multiplayer regressions pass (50/50 local CTest checks).
 - [ ] Stereo disocclusion handling improved and checked in the headset.
-- [ ] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
-- [ ] Separate local install contains the supported game build and VR binaries.
+- [x] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
+- [x] Separate local install contains the supported game build and VR binaries.
 - [ ] GitHub fork under damorimf has the development source and build checks.
 - [ ] Quest 3 / SteamVR starts and displays correct stereo with stable tracking.
 - [ ] First/third person, walking, grabs, bails, map changes and recenter tested.
@@ -64,6 +64,20 @@ exact supported executable hash. Its game data was copied into
 C:\Users\Daniel\Games\ReSkateVR, excluding its mod settings and mod folders.
 SteamVR is the registered OpenXR runtime. GitHub account requested: damorimf.
 Runtime playtesting requires the user's connected Quest 3.
+
+## Runtime evidence (October 15, 2026)
+
+The installed candidate passed exact game and Steam API identity checks, loaded
+ReSkate.dll, initialized the DX12 overlay and created a live local skater.
+With the user's Quest 3 connected, SteamVR/OpenXR 2.18.3 entered a focused session,
+recognized Touch bindings and submitted depth-stereo eye images. Logs showed
+about 60 game-camera updates/s and typically 115–120 presents/s at an 1800x1800
+game image, with occasional dips. These counters do not establish visual comfort
+or 120 unique game-camera frames/s. User testing of image quality, transitions,
+recenter, controls, bails, map changes and sustained performance remains pending.
+
+The installer was exercised against an unsupported-game fixture, a tampered
+binary and a repeated install: rejection and backup checks passed.
 
 ## Packaging and installation
 

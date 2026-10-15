@@ -12,6 +12,12 @@ foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll')) {
 }
 $commit = (git -C $repo rev-parse HEAD).Trim()
 if ($LASTEXITCODE) { throw 'Cannot identify source revision' }
+$expectedRevision = (git -C $repo describe --always --dirty --abbrev=12).Trim()
+$configuration = Join-Path (Split-Path $build -Parent) 'generated/crash_report_config.h'
+$configured = [regex]::Match((Get-Content -LiteralPath $configuration -Raw), 'build_version\[\] = "([^"]+)"').Groups[1].Value
+if ($configured -ne $expectedRevision) {
+    throw 'Build revision differs from the source tree. Reconfigure and rebuild before packaging.'
+}
 $stage = Join-Path $output ('ReSkateVR-1.0.0-dev-' + $commit.Substring(0, 8))
 if (Test-Path -LiteralPath $stage) { throw "Package directory already exists: $stage" }
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
@@ -45,7 +51,7 @@ $files = @(Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object {
     [ordered]@{ path = $_.FullName.Substring($stage.Length + 1).Replace('\', '/'); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
 })
 $manifest = [ordered]@{
-    schema = 1; version = '1.0.0-dev'; source = $commit
+    schema = 1; version = '1.0.0-dev'; source = $commit; buildRevision = $configured
     sourceDirty = [bool](git -C $repo status --porcelain)
     verifiedV1 = $false; supportedGameBuild = '25414733'
     gameSha256 = 'fbce74d5e28ef525dbba2cb4adbebc13405bdbd88f31bc940bca45e4ae88b8f9'

@@ -28,8 +28,8 @@ float shift_at(float2 uv, float2 size) {
 // interpolated between the two steps for a sub-pixel, stable edge. At t = 0 the
 // test always passes. A jump from clearly behind to clearly in front is a depth
 // edge, not a surface: the pixel is a hole the centre view never saw. Stretch
-// fills it with the near edge; background fill (mode bit 8) with the farthest
-// surface immediately before the silhouette.
+// fills it with the near edge; background fill (mode bit 8) uses the surface
+// immediately before the silhouette.
 // Widens the near depth by a few pixels (max filter, reversed Z: larger = nearer), once
 // per kept frame: anti-aliased and fringed edge pixels then move with their object
 // instead of tearing off as lines between the eyes.

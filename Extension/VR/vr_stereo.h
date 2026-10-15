@@ -15,7 +15,7 @@ struct StereoParams {
     // Horizontal shift in UV units per unit of (reversed-Z) depth, and its cap.
     float scale = 0;
     float max_shift = 0.04f;
-    // Holes the centre view never saw: background (farthest surface) or the near edge stretched.
+    // Holes the centre view never saw: adjacent background or the near edge stretched.
     bool background_fill = true;
     float vignette = 0; // comfort vignette (0 none)
 };
