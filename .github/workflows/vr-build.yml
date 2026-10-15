@@ -1,0 +1,26 @@
+name: VR development build
+on:
+  push:
+    branches: ['codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure VR and regression tests
+        run: cmake --preset vr-v1
+      - name: Build
+        run: cmake --build --preset vr-v1-release --parallel 4
+      - name: Test
+        run: ctest --test-dir build/vr-v1 -C Release --output-on-failure
+      - name: Package candidate with OpenXR loader and licenses
+        shell: pwsh
+        run: ./contrib/Package-VR.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ReSkateVR-development
+          path: artifacts/vr-v1/*.zip

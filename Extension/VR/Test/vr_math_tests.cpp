@@ -41,6 +41,28 @@ Quat pitch(float radians) { return {std::sin(radians / 2), 0, 0, std::cos(radian
 }
 
 int main() {
+    // View changes are continuous, interruptible and independent of update rate.
+    {
+        ViewTransition rig;
+        CHECK(near(rig.sample({}, 0, 0), Vec3{}));
+        const Vec3 third{0, 0.6f, 3};
+        CHECK(near(rig.sample(third, 1, 0), Vec3{}));
+        const auto halfway = rig.sample(third, 1, 0.1f);
+        CHECK(halfway[2] > 0 && halfway[2] < third[2]);
+        CHECK(near(rig.sample({}, 0, 0), halfway));
+        CHECK(rig.sample({}, 0, 0.1f)[2] < halfway[2]);
+        ViewTransition slow, fast;
+        (void)slow.sample({}, 0, 0);
+        (void)fast.sample({}, 0, 0);
+        for (int i = 0; i < 30; ++i) (void)slow.sample(third, 1, 1.0f / 30);
+        for (int i = 0; i < 120; ++i) (void)fast.sample(third, 1, 1.0f / 120);
+        CHECK(near(slow.last, fast.last));
+        CHECK(near(fast.sample(third, 1, 1), third)); // pause/teleport resets
+        const Vec3 moved{2, 0.6f, 3};
+        CHECK(near(fast.sample(moved, 1, 1.0f / 60), moved)); // no locomotion lag
+        CHECK(near(fast.sample(moved, 1, -0.1f), moved));
+        CHECK(near(fast.sample({}, 0, std::numeric_limits<float>::quiet_NaN()), Vec3{}));
+    }
     // wrap keeps angles in (-pi, pi].
     CHECK(near(wrap(0), 0));
     CHECK(near(wrap(3 * pi), pi));

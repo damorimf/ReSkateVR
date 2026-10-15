@@ -37,6 +37,29 @@ inline float wrap(float angle) {
     return angle <= -pi ? angle + 2 * pi : angle;
 }
 
+// Smooth only a change of camera mode. Once settled, movement follows the target
+// directly, without adding lag to skating or to headset tracking. Offsets are
+// relative to the current skater, so locomotion never trails a world-space pose.
+struct ViewTransition {
+    Vec3 last{}, correction{};
+    int mode = -1;
+    Vec3 sample(const Vec3& target, int next_mode, float elapsed, float seconds = 0.18f) {
+        if (mode < 0 || !std::isfinite(elapsed) || elapsed > 0.5f || seconds <= 0) {
+            mode = next_mode;
+            correction = {};
+            return last = target;
+        }
+        if (mode != next_mode) {
+            correction = first_person::subtract(last, target);
+            mode = next_mode;
+        }
+        const float decay = std::exp(-std::max(elapsed, 0.0f) / seconds);
+        for (auto& value : correction) value *= decay;
+        if (first_person::length(correction) < 0.001f) correction = {};
+        return last = first_person::add(target, correction);
+    }
+};
+
 // Rotation about +Y by `heading` radians; heading 0 looks down -Z.
 inline Quat yaw(float heading) { return {0, std::sin(heading / 2), 0, std::cos(heading / 2)}; }
 

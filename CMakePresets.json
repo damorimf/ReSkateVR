@@ -13,6 +13,19 @@
       "toolset": "v143"
     },
     {
+      "name": "vr-v1",
+      "displayName": "ReSkate VR V1 development",
+      "inherits": "vs2022-x64",
+      "binaryDir": "${sourceDir}/build/vr-v1",
+      "cacheVariables": {
+        "DINGOSDK_VERSION": "1.0.0-dev",
+        "DINGOSDK_BUILD_VR_TESTS": "ON",
+        "DINGOSDK_BUILD_MULTIPLAYER_TESTS": "ON",
+        "DINGOSDK_LAUNCHER_AUTO_UPDATE": "OFF",
+        "DINGOSDK_BACKTRACE_URL": ""
+      }
+    },
+    {
       "name": "linux-x64",
       "displayName": "Linux x64 (dedicated server only)",
       "generator": "Unix Makefiles",
@@ -26,6 +39,11 @@
     {
       "name": "release",
       "configurePreset": "vs2022-x64",
+      "configuration": "Release"
+    },
+    {
+      "name": "vr-v1-release",
+      "configurePreset": "vr-v1",
       "configuration": "Release"
     },
     {

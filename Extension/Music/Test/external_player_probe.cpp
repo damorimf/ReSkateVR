@@ -1,12 +1,29 @@
 // By hand: what the music player outside the game says it is playing, for a few seconds, and
 // optionally one command to it. external_player_probe [toggle|next|previous|play|pause]
 #include "Extension/Music/external_player.h"
+#include "Extension/Music/spotify_device.h"
+#include "Extension/Music/youtube_music.h"
 #include <chrono>
 #include <cstring>
 #include <iostream>
 #include <thread>
 
 using namespace dingosdk;
+
+// This standalone probe observes Windows media sessions. In-game music sources
+// are absent; the runtime links their real implementations instead.
+namespace dingosdk::spotify_device {
+bool connected() noexcept { return false; }
+external_player::Track now() { return {}; }
+std::uint64_t revision() noexcept { return 0; }
+void send(external_player::Command) noexcept {}
+}
+namespace dingosdk::youtube_music {
+bool on() noexcept { return false; }
+external_player::Track now() { return {}; }
+std::uint64_t revision() noexcept { return 0; }
+void send(external_player::Command) noexcept {}
+}
 
 int main(int argc, char** argv) {
     external_player::start();

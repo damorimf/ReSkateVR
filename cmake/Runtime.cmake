@@ -298,16 +298,13 @@ set(dingosdk_startup_art "${PROJECT_SOURCE_DIR}/assets/startup_splash.png")
 if(NOT EXISTS "${dingosdk_startup_art}")
     set(dingosdk_startup_art "${PROJECT_SOURCE_DIR}/assets/startup_splash.jpg")
 endif()
-if(EXISTS "${PROJECT_SOURCE_DIR}/assets")
-    # Adding or removing the picture re-runs the configure step.
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/assets")
-endif()
+# Track files rather than directories: MSBuild treats a directory dependency as
+# a missing file, repeatedly re-running CMake during parallel project builds.
+file(GLOB dingosdk_startup_art_choices CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/assets/startup_splash.*")
 # Chat emotes (Better Chat's pack format; Extension/UI/Overlay/chat_emotes.h), built into
 # ReSkate.dll when the repository has assets/emotes/emotes.json and emotes.png.
 set(dingosdk_emotes "${PROJECT_SOURCE_DIR}/assets/emotes")
-if(EXISTS "${dingosdk_emotes}")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${dingosdk_emotes}")
-endif()
+file(GLOB dingosdk_emote_files CONFIGURE_DEPENDS "${dingosdk_emotes}/*")
 if(EXISTS "${dingosdk_emotes}/emotes.json" AND EXISTS "${dingosdk_emotes}/emotes.png")
     file(TO_NATIVE_PATH "${dingosdk_emotes}" dingosdk_emotes_native)
     string(REPLACE "\\" "\\\\" dingosdk_emotes_native "${dingosdk_emotes_native}")

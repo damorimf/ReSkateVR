@@ -814,14 +814,17 @@ void debug_action(SourceTrial& trial, std::uintptr_t client, bool can_control, b
 // the same actions as the menu toggle, after the state has held briefly.
 void first_person_board_tick(SourceTrial& trial, std::uintptr_t client, bool can_control, bool phase, DWORD error) {
     auto& debug = trial.debug;
+    const auto vr_options = vr::settings();
+    const bool vr_owns_camera = vr_options.enabled && vr_options.auto_first_person && vr::status().running;
     // Choosing Freecam or the Park Editor while handed back ends the hand-back.
     if (debug.first_person_paused && (debug.park_editor || (debug.camera_owned && !debug.first_person)))
         debug.first_person_paused = false;
     // With the option off, a hand-back still in progress resumes below.
-    if (!debug.first_person_paused && !(debug.first_person && debug.first_person_settings.board_only)) return;
+    if (!debug.first_person_paused && !(debug.first_person && debug.first_person_settings.board_only && !vr_owns_camera)) return;
     if (!can_control || !phase || debug.park_editor || debug.noclip || debug.editor_transition) return;
     const auto now = GetTickCount64();
-    const auto on_foot = debug.first_person_settings.board_only ? first_person_on_foot(trial.base, client) : std::optional<bool>(false);
+    const auto on_foot = debug.first_person_settings.board_only && !vr_owns_camera
+        ? first_person_on_foot(trial.base, client) : std::optional<bool>(false);
     if (!on_foot) return;
     if (*on_foot != debug.first_person_last_on_foot) {
         debug.first_person_last_on_foot = *on_foot;
@@ -870,8 +873,10 @@ bool first_person_camera_height_write(bool high) noexcept {
 void first_person_cycle_tick(SourceTrial& trial, std::uintptr_t client, bool can_control, bool phase, DWORD error) {
     auto& debug = trial.debug;
     const auto now = GetTickCount64();
+    const auto vr_options = vr::settings();
+    const bool vr_owns_camera = vr_options.enabled && vr_options.auto_first_person && vr::status().running;
     const bool enabled = debug.first_person_settings.camera_cycle && can_control && phase &&
-        !debug.park_editor && !debug.noclip && !debug.editor_transition;
+        !debug.park_editor && !debug.noclip && !debug.editor_transition && !vr_owns_camera;
     const auto step = static_cast<first_person::CycleStep>(cycle_request.exchange(0, std::memory_order_acq_rel));
     if (enabled && step != first_person::CycleStep::none) {
         // The player's own First person choice, so it replaces an on-foot hand-back.
@@ -951,7 +956,8 @@ overlay::DebugModel on_client_debug_tick(std::uintptr_t base, std::uintptr_t cli
     }
     const bool no_bail_allowed = session_no_bail_allowed();
     // VR takes over the camera: first person, which carries the VR views, turns on by itself.
-    if (vr::wants_first_person(debug.first_person) && !request && can_control && camera_phase_observed) {
+    if (!debug.park_editor && !debug.noclip && !debug.camera_owned &&
+        vr::wants_first_person(debug.first_person) && !request && can_control && camera_phase_observed) {
         try {
             debug_action(trial, client, can_control, camera_phase_observed, {overlay::DebugAction::set_first_person, true},
                 error.value);

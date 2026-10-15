@@ -233,6 +233,7 @@ struct Camera {
     float eyes_blend = 0;
     bool eyes_on = false;
     math::TiltRig tilt_rig;
+    math::ViewTransition view_transition;
     double rig_time = 0;
     bool turn_held = false; // look turn: the right stick must return before the next
     // Bail camera: tilted (or upright again) since; the fixed eye and its heading.
@@ -346,6 +347,7 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             c.eyes_place = {};
             c.eyes_on = false;
             c.tilt_rig = {};
+            c.view_transition = {};
         }
         if (body && frame_end && c.origin_time > 0 &&
             first_person::length(first_person::subtract(body->origin, c.origin)) > 2.0f) {
@@ -360,6 +362,7 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
             c.eyes_place = {};
             c.eyes_on = false;
             c.tilt_rig = {};
+            c.view_transition = {};
             c.trail.clear();
             c.bail = c.outside = false;
             c.grab_seen = 0;
@@ -564,13 +567,26 @@ bool apply_camera(std::array<float, 16>& matrix, CameraWriter writer, const Body
                 for (std::size_t i = 0; i < 3; ++i) c.bail_eye[i] += (body->origin[i] + behind[i] - c.bail_eye[i]) * follow;
             }
             c.outside = outside;
-            body_showing.store(c.bail || c.grab, std::memory_order_relaxed);
         }
         if (c.outside) {
             behind_camera = true;
             offset = first_person::rotate(math::yaw(c.bail_heading), {0, 1.2f, 3.0f});
             for (std::size_t i = 0; i < 3; ++i) anchor[i] = c.bail_eye[i] - offset[i];
         }
+        // Blend changes of viewpoint before the ground/slope guard. Headset pose
+        // is composed afterwards and never passes through this transition.
+        const math::Vec3 reference{matrix[12], matrix[13], matrix[14]};
+        const math::Vec3 target = behind_camera ? first_person::add(anchor, offset)
+            : math::Vec3{base[12], base[13], base[14]};
+        const auto moved = c.view_transition.sample(first_person::subtract(target, reference),
+            c.outside ? 2 : options.view_mode, frame_end ? rig_elapsed : 0.0f);
+        if (behind_camera || first_person::length(c.view_transition.correction) > 0.001f) {
+            behind_camera = true;
+            anchor = reference;
+            offset = moved;
+        }
+        if (frame_end) body_showing.store(c.bail || c.grab || options.view_mode == 1 ||
+            first_person::length(c.view_transition.correction) > 0.2f, std::memory_order_relaxed);
         if (behind_camera) {
             // Keep the camera out of slopes behind the skater. The ground: 0.3 m below any body
             // origin the trail has near the camera (about 1.2 m under it; within 1.5 m, wider the

@@ -12,6 +12,9 @@
 #include <set>
 
 namespace dingosdk {
+// Native hook installation is stubbed in this in-memory transport harness.
+HookBatch::HookBatch() noexcept = default;
+HookBatch::~HookBatch() = default;
 bool read_local_camera_transform(std::uintptr_t, std::uintptr_t, std::array<float, 16>&) noexcept { return false; }
 ParksModel simulated_parks;
 std::vector<std::pair<std::uint64_t, ParkChoices>>* simulated_park_receives{};

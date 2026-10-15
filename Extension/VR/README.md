@@ -69,11 +69,15 @@ skater looks like a small figure in a model world). Your own settings can be sav
 - **Third person** follows the direction of travel, like the game's camera (**Follow** sets how lazily).
 - **Take over the camera** (default): while the headset runs, first person (which carries all VR views)
   turns on by itself, also after a map change.
+  Upstream's third-person-on-foot option and R3 camera cycle yield while this takeover is active.
+  Freecam and Park Editor keep their own camera until you leave them.
 - **Walk where you look** (on foot): the view turns only with your head and the right stick (**Stick
   turning**: snap or smooth), so the stick walks where you look.
 - **Flip & bail view**: when the skater goes head over heels (bails, back and front flips), the view moves
   just behind them with the whole body shown; the right stick orbits. **Grab view** does the same while
   grabbing in the air; **Show body in grabs** keeps first person and shows the whole skater instead.
+- Changes between first person, third person and outside views ease the camera position over about
+  half a second. Headset tracking remains immediate, and the ground guard applies after the transition.
 - Third person and the outside views stay clear of the ground the skater has ridden and of the slope
   being ridden: on a ramp the camera behind pulls in towards the skater, then rises, instead of entering it.
 - **You see (board) / You see (on foot)**: how much of your skater first person shows (neck down,
@@ -151,6 +155,7 @@ Settings are saved in the local profile under `ReSkate.VR.*`.
 | `vr_xr.cpp` | OpenXR loader, session, events and frame loop on the Present thread |
 | `vr_blit.cpp` | Back buffer → swapchain copy (D3D12, shader compiled at run time; comfort vignette) |
 | `vr_depth.cpp`, `vr_stereo.cpp` | Scene depth copy and the depth stereo pass |
+| `vr_stereo_shader.h`, `Test/vr_stereo_tests.cpp` | Shared stereo shader and software-GPU edge regression |
 | `vr_input.cpp` | Headset controllers (OpenXR actions) as XInput pad 0; the left hand's pose for the chat panel |
 | `vr_costume.cpp` | Feet only: the FeetOnly costume on the local skater and the hidden clothes keeper (runtime target) |
 | `vr_gamepad.cpp` | Right sticks the game's hook does not see (XInput slots, DirectInput Sony pads) |
