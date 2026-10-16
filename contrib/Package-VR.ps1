@@ -35,7 +35,7 @@ Copy-Item -LiteralPath (Join-Path $loader 'x64/bin/openxr_loader.dll') -Destinat
 foreach ($name in @('ReSkateLauncher.exe', 'ReSkate.dll', 'ReSkateVRSetup.exe')) {
     Copy-Item -LiteralPath (Join-Path $build $name) -Destination $stage
 }
-Copy-Item -LiteralPath (Join-Path $repo 'LICENSE'), (Join-Path $repo 'VR_V1.md') -Destination $stage
+Copy-Item -LiteralPath (Join-Path $repo 'LICENSE'), (Join-Path $repo 'VR_V1.md'), (Join-Path $repo 'VR_QUICKSTART.md') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $repo 'contrib/Install-VR.ps1') -Destination $stage
 $licenses = Join-Path $stage 'licenses'
 New-Item -ItemType Directory -Path $licenses | Out-Null

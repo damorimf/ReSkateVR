@@ -365,6 +365,34 @@ template<class Mode, class Function, class Output>
 HRESULT modes_with_extra(Function list, Output* output, DXGI_FORMAT format, UINT flags, UINT* count, Mode* modes) {
     const auto extra = extra_modes();
     if (extra.empty() || !count) return list(output, format, flags, count, modes);
+    const auto& s = state();
+    if (s.force_windowed && s.forced_width == s.forced_height) {
+        UINT real = 0;
+        auto result = list(output, format, flags, &real, nullptr);
+        if (FAILED(result) || !real) { *count = real; return result; }
+        const auto catalog = dingosdk::vr::display::windowed_catalog(s.forced_width);
+        const auto capacity = *count;
+        *count = static_cast<UINT>(catalog.size());
+        if (!modes) return result;
+        if (capacity < catalog.size()) return DXGI_ERROR_MORE_DATA;
+        std::vector<Mode> physical(real);
+        result = list(output, format, flags, &real, physical.data());
+        if (FAILED(result) || !real) return result;
+        // Retain the real output's format/refresh metadata, but use a stable
+        // size/index mapping for the windowed VR render targets.
+        const auto model = physical[real - 1];
+        for (std::size_t i = 0; i < catalog.size(); ++i) {
+            modes[i] = model;
+            modes[i].Width = catalog[i].first;
+            modes[i].Height = catalog[i].second;
+        }
+        static std::atomic<bool> logged{};
+        if (!logged.exchange(true))
+            dingosdk::logging::printf(dingosdk::logging::Level::info, dingosdk::logging::Channel::graphics,
+                "Display modes: stable windowed VR catalog, %u sizes; requested %ux%u.",
+                *count, s.forced_width, s.forced_height);
+        return result;
+    }
     const auto added = static_cast<UINT>(extra.size());
     if (!modes) {
         const HRESULT result = list(output, format, flags, count, nullptr);

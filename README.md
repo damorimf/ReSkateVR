@@ -1,4 +1,11 @@
-# ReSkate
+# ReSkate VR development fork
+
+Quest 3 / SteamVR setup and controls: **[VR quickstart](VR_QUICKSTART.md)**.
+Build instructions, test evidence and remaining V1 gates: [development notes](VR_V1.md).
+This fork integrates cesarcc2's VR work with upstream ReSkate; headset performance
+and stability are still being validated.
+
+## ReSkate
 
 play it offline, host your own lobbies and dedicated servers, and mod it.
 the launcher, the runtime that loads into the game, and the dedicated server.

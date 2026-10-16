@@ -33,7 +33,7 @@ if (-not $supported -and -not $PrepareGame) {
 }
 New-Item -ItemType Directory -Path $install -Force | Out-Null
 $backup = Join-Path $install ('VR-backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
-foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','ReSkateVRSetup.exe','openxr_loader.dll','vr-package.json','VR_V1.md','LICENSE')) {
+foreach ($name in @('ReSkateLauncher.exe','ReSkate.dll','ReSkateVRSetup.exe','openxr_loader.dll','vr-package.json','VR_V1.md','VR_QUICKSTART.md','LICENSE')) {
     $destination = Join-Path $install $name
     if (Test-Path -LiteralPath $destination) {
         New-Item -ItemType Directory -Path $backup -Force | Out-Null

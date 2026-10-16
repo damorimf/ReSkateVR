@@ -45,17 +45,15 @@ int main(int argc, char** argv) {
         if (size != 2304 && size != 2592 && size != 2880) throw std::runtime_error("Choose 2304, 2592 or 2880");
         const auto saved = graphics::load(graphics::save_root());
         if (saved.folders.empty()) throw std::runtime_error("Launch ReSkate once to create game settings first");
-        auto modes = graphics::display_resolutions();
-        for (const auto square : dingosdk::vr::display::square_sizes) modes.emplace_back(square, square);
-        std::sort(modes.begin(), modes.end());
-        modes.erase(std::unique(modes.begin(), modes.end()), modes.end());
-        const auto found = std::find(modes.begin(), modes.end(), std::pair{size, size});
+        const auto modes = dingosdk::vr::display::windowed_catalog(static_cast<unsigned>(size));
+        const auto found = std::find(modes.begin(), modes.end(), std::pair{static_cast<unsigned>(size), static_cast<unsigned>(size)});
         if (found == modes.end()) throw std::runtime_error("VR resolution is unavailable");
         const auto index = static_cast<std::int32_t>(std::distance(modes.begin(), found));
         graphics::Values changes{{"Resolution", index}, {"WindowedMode", std::int32_t{0}}};
         if (const auto hdr = saved.values.find("HDR"); hdr != saved.values.end())
             changes["HDR"] = std::holds_alternative<bool>(hdr->second) ? graphics::Value(false) : graphics::Value(std::int32_t{0});
         auto options = graphics::parse_options(std::get<std::string>(saved.values.at(graphics::options_key)));
+        const bool performance = size == 2304;
         const std::pair<const char*, const char*> tuning[]{
             {"VSync", "v_sync_off"}, {"Frame Synthesis Mode", "frame_synthesis_mode_none"},
             {"Resolution Scale Enable", "resolution_scaling_off"}, {"Resolution", "resolution_scale_1"},
@@ -63,13 +61,20 @@ int main(int argc, char** argv) {
             {"Target Framerate", "target_uncapped_present_tltr"}, {"Global Graphics Quality", "Custom"},
             {"Texture Quality", "texture_quality_high"}, {"Texture Filtering", "texture_filtering_ultra"},
             {"Shadows", "shadows_medium"}, {"Effects Quality", "effects_quality_medium"},
-            {"Post Process", "post_process_low"}
+            {"Post Process", "post_process_low"},
+            {"GIBS", "gibs_off"},
+            {"GI Grid", performance ? "gi_grid_medium" : "gi_grid_high"},
+            {"Lighting", performance ? "lighting_medium" : "lighting_high"},
+            {"Mesh Quality", performance ? "mesh_quality_medium" : "mesh_quality_high"},
+            {"Ambient Occlusion", "ambient_occlusion_gtao_half"}
         };
         for (auto& option : options) for (const auto& [name, value] : tuning)
             if (option.name == name) option.value = value;
         changes[graphics::options_key] = graphics::join_options(options);
         std::cout << "VR image: " << size << 'x' << size << " (resolution index " << index << ")\n"
-            << "Windowed, native resolution, HDR off, motion blur off, depth of field off.\n";
+            << "Windowed, native resolution, HDR off, motion blur off, depth of field off.\n"
+            << "Ray-traced GI off; lighting/mesh " << (performance ? "medium" : "high")
+            << "; half-resolution ambient occlusion. Textures high.\n";
         if (!apply) { std::cout << "Inspection only. Add --apply to save these settings.\n"; return 0; }
         if (game_running()) throw std::runtime_error("Close skate. before applying graphics settings");
         const auto backup = graphics::save_root().parent_path().parent_path() / L"VR-settings-backups" /

@@ -147,6 +147,26 @@ later recorded a normal native shutdown. This does not yet establish stability.
   this PC. The desktop shortcut and launcher now request 2304; the setup helper's
   size semantics still need a portable fix before release.
 
+## Predictable resolution and GPU budget
+
+The installed follow-camera candidate remains under test. A subsequent candidate
+uses a fixed square VR resolution catalog shared by setup and DXGI enumeration
+when launched windowed with square dimensions. This removes dependence on monitor
+mode ordering: 2304 square is index 4, 2592 index 5, and 2880 index 6. Other launches
+keep their existing display-mode behavior. Actual dimensions still require a
+launch test; the earlier 25% size mismatch did not establish DPI as its cause.
+
+The saved game options also showed ray-traced GI enabled, ultra lighting/mesh,
+and full-resolution GTAO. VR setup now disables ray-traced GI, uses medium lighting,
+mesh and GI grid for Performance (high for Balanced/Sharp), and half-resolution
+GTAO while retaining high textures, native resolution and ultra texture filtering.
+These changes need a headset performance/appearance comparison.
+
+A local synthetic run of the actual stereo renderer on the RX 7900 XTX measured
+0.79 ms at 2880 square and 0.66 ms at 2304 square for both eye draws. It used
+uniform depth 0.02, scale 0.12, maximum shift 0.018, and excludes game rendering,
+copies and the compositor. It is not a gameplay timing result.
+
 ## Packaging and installation
 
 ```powershell

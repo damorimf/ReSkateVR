@@ -2,6 +2,7 @@
 //   cl /std:c++20 /EHsc /I <repo> Extension/VR/Test/vr_math_tests.cpp
 //   g++ -std=c++20 -I <repo> Extension/VR/Test/vr_math_tests.cpp
 #include "Extension/VR/vr_math.h"
+#include "Extension/VR/vr_display_modes.h"
 #include <cstdio>
 #include <cstdlib>
 
@@ -41,6 +42,19 @@ Quat pitch(float radians) { return {std::sin(radians / 2), 0, 0, std::cos(radian
 }
 
 int main() {
+    {
+        // The setup helper and game enumerate the same monitor-independent
+        // indices. A custom size is inserted once, in the same sorted order.
+        using dingosdk::vr::display::windowed_catalog;
+        const auto standard = windowed_catalog(2304);
+        CHECK(standard.size() == 10);
+        CHECK((standard[4] == std::pair{2304u, 2304u}));
+        CHECK(standard == windowed_catalog(2880));
+        const auto custom = windowed_catalog(2400);
+        CHECK(custom.size() == 11);
+        CHECK((custom[5] == std::pair{2400u, 2400u}));
+        CHECK(custom.front() == standard.front() && custom.back() == standard.back());
+    }
     // Animation can sway or flip around the origin without moving a comfort
     // camera. Locomotion and real headset translation still reach it immediately.
     {
