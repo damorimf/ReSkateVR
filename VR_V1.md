@@ -36,7 +36,7 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 - [ ] Stereo disocclusion handling improved and checked in the headset.
 - [x] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
 - [x] Separate local install contains the supported game build and VR binaries.
-- [ ] GitHub fork under damorimf has the development source and build checks.
+- [x] GitHub fork under damorimf has source and passing build/test/package checks (89a8b45a).
 - [ ] Quest 3 / SteamVR starts and displays correct stereo with stable tracking.
 - [ ] First/third person, walking, grabs, bails, map changes and recenter tested.
 - [ ] Menus, controller input, shutdown and restarting the game tested.
@@ -166,6 +166,26 @@ A local synthetic run of the actual stereo renderer on the RX 7900 XTX measured
 0.79 ms at 2880 square and 0.66 ms at 2304 square for both eye draws. It used
 uniform depth 0.02, scale 0.12, maximum shift 0.018, and excludes game rendering,
 copies and the compositor. It is not a gameplay timing result.
+
+## DPI follow-up and clean CI evidence
+
+GitHub Actions run [38828708580](https://github.com/damorimf/ReSkateVR/actions/runs/38828708580)
+built 89a8b45a on a clean Windows runner, passed all 52 tests, and uploaded the
+43,774,888-byte development artifact (artifact ID 12017077496).
+
+The 89a8b45a candidate was installed and its Performance settings verified on disk.
+With Quest connected, it reached focused VR gameplay with tracked 6DoF. Actual
+image size remained 2880 square despite a 2304-square catalog selection and logical
+client size. Live stereo draw timing was usually 0.65-0.9 ms; presents fluctuated
+around 60-84/s with about 60 camera updates/s. This remains below the intended
+120 Hz budget; no comfort/performance acceptance is claimed.
+
+A subsequent patch establishes per-monitor DPI awareness for square windowed VR
+launches while the launcher still holds the game suspended, before HWND creation.
+The game manifest declares no DPI awareness. Windows documents that the process
+setting must precede window creation. The patch logs success/error and system DPI;
+actual game image dimensions and menu appearance require another launch test.
+Reference: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setprocessdpiawarenesscontext
 
 ## Packaging and installation
 

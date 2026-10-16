@@ -36,6 +36,17 @@ bool start_display_settings(std::uintptr_t base) {
     const auto height = dimension(L"RESKATE_WINDOW_HEIGHT", 200);
     if (!width && !height) return true; // Respect saved settings unless explicitly overridden.
     if (!width || !height) return false;
+    if (width == height) {
+        // The launcher calls initialization while the game is still suspended,
+        // before any HWND exists. A 2304-square logical client was observed with
+        // a physical 2880-square buffer at 125%. Establish one DPI context
+        // before window creation to avoid mixing logical and physical sizes.
+        const bool applied = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != FALSE;
+        const auto error = applied ? ERROR_SUCCESS : GetLastError();
+        logging::log(logging::Level::info, logging::Channel::graphics,
+            "VR window DPI: per-monitor awareness {}; result {}; system DPI {}.",
+            applied ? "applied" : "already set or unavailable", error, GetDpiForSystem());
+    }
     display_script = "Window=Window or {}\nRenderDevice=RenderDevice or {}\nWindow.Width=" + std::to_string(width) +
         "\nWindow.Height=" + std::to_string(height) +
         "\nRenderDevice.FullscreenWidth=" + std::to_string(width) +
