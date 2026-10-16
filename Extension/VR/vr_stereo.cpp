@@ -98,6 +98,19 @@ bool DepthStereo::create(ID3D12Device* device, std::string& error) {
     if (FAILED(result)) { error = hresult("Creating the VR stereo fence", result); return false; }
     event_ = CreateEventW(nullptr, FALSE, FALSE, nullptr);
     if (!event_) { error = "Creating the VR stereo fence event failed."; return false; }
+    // Timing is optional: diagnostics must never prevent VR from starting.
+    D3D12_QUERY_HEAP_DESC queries{D3D12_QUERY_HEAP_TYPE_TIMESTAMP, slots * 2, 0};
+    if (SUCCEEDED(device->CreateQueryHeap(&queries, IID_PPV_ARGS(&timestamps_)))) {
+        D3D12_HEAP_PROPERTIES timing_heap{D3D12_HEAP_TYPE_READBACK};
+        D3D12_RESOURCE_DESC buffer{};
+        buffer.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        buffer.Width = slots * 2 * sizeof(UINT64);
+        buffer.Height = buffer.DepthOrArraySize = buffer.MipLevels = 1;
+        buffer.SampleDesc.Count = 1;
+        buffer.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        if (FAILED(device->CreateCommittedResource(&timing_heap, D3D12_HEAP_FLAG_NONE, &buffer,
+                D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&timing_readback_)))) timestamps_.Reset();
+    }
     device_ = device;
     return true;
 }
@@ -119,6 +132,8 @@ void DepthStereo::destroy() noexcept {
     list_.Reset();
     for (auto& allocator : allocators_) allocator.Reset();
     slot_fences_ = {};
+    timestamps_.Reset(); timing_readback_.Reset();
+    timing_pending_ = {}; timing_frequency_ = {}; gpu_ms_ = 0;
     srvs_.Reset(); rtvs_.Reset(); root_.Reset(); vertex_.Reset(); pixel_.Reset(); dilate_.Reset(); fence_.Reset(); kept_.Reset();
     kept_depth_.Reset(); widened_.Reset();
     if (event_) CloseHandle(event_);
@@ -166,6 +181,23 @@ ID3D12PipelineState* DepthStereo::pipeline(DXGI_FORMAT format, std::string& erro
 bool DepthStereo::begin(std::string& error) {
     if (!device_) { error = "The VR stereo pass is not initialised."; return false; }
     if (!wait(slot_fences_[slot_], 1000)) { error = "The GPU did not finish an earlier VR stereo pass."; return false; }
+    // begin() already waits for this allocator's fence. Its resolved timestamps
+    // are therefore safe to read, even when this slot is next used for a copy.
+    if (timing_pending_[slot_] && timing_readback_ && timing_frequency_[slot_]) {
+        const SIZE_T offset = static_cast<SIZE_T>(slot_) * 2 * sizeof(UINT64);
+        const D3D12_RANGE read{offset, offset + 2 * sizeof(UINT64)};
+        void* mapped = nullptr;
+        if (SUCCEEDED(timing_readback_->Map(0, &read, &mapped))) {
+            std::array<UINT64, 2> ticks{};
+            std::memcpy(ticks.data(), static_cast<const unsigned char*>(mapped) + offset, sizeof(ticks));
+            const D3D12_RANGE written{0, 0};
+            timing_readback_->Unmap(0, &written);
+            if (ticks[1] >= ticks[0])
+                gpu_ms_ = static_cast<float>(1000.0 * static_cast<double>(ticks[1] - ticks[0]) /
+                    static_cast<double>(timing_frequency_[slot_]));
+        }
+    }
+    timing_pending_[slot_] = false;
     HRESULT result = allocators_[slot_]->Reset();
     if (SUCCEEDED(result)) result = list_->Reset(allocators_[slot_].Get(), nullptr);
     if (FAILED(result)) { error = hresult("Resetting the VR stereo command list", result); return false; }
@@ -300,6 +332,9 @@ bool DepthStereo::render(ID3D12CommandQueue* queue, const std::array<ID3D12Resou
     if (!kept_ || !widened_) { error = "No frame kept for the VR stereo pass yet."; return false; }
     auto* state = pipeline(target_format, error);
     if (!state || !begin(error)) return false;
+    const bool timed = timestamps_ && timing_readback_ &&
+        SUCCEEDED(queue->GetTimestampFrequency(&timing_frequency_[slot_])) && timing_frequency_[slot_];
+    if (timed) list_->EndQuery(timestamps_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot_ * 2);
     list_->SetPipelineState(state);
     auto srv = srvs_->GetCPUDescriptorHandleForHeapStart();
     srv.ptr += static_cast<SIZE_T>(slot_) * 4 * srv_stride_;
@@ -345,6 +380,14 @@ bool DepthStereo::render(ID3D12CommandQueue* queue, const std::array<ID3D12Resou
         list_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
         list_->DrawInstanced(3, 1, 0, 0);
     }
-    return submit(queue, error);
+    if (timed) {
+        list_->EndQuery(timestamps_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot_ * 2 + 1);
+        list_->ResolveQueryData(timestamps_.Get(), D3D12_QUERY_TYPE_TIMESTAMP, slot_ * 2, 2,
+            timing_readback_.Get(), static_cast<UINT64>(slot_) * 2 * sizeof(UINT64));
+    }
+    const auto submitted_slot = slot_;
+    if (!submit(queue, error)) return false;
+    timing_pending_[submitted_slot] = timed;
+    return true;
 }
 }

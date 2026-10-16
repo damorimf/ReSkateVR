@@ -68,7 +68,7 @@ struct Runtime {
     std::deque<std::optional<EyeRecord>> history;
     math::Anchor screen_anchor;
     std::uint64_t screen_recenter = 0;
-    bool key_down = false;
+    bool key_down = false, view_key_down = false;
     double stats_time = 0;
     std::uint64_t stats_presents = 0, stats_camera = 0, presents = 0;
     // New camera frames found per present while the VR camera is active:
@@ -537,6 +537,19 @@ bool render_stereo_into(std::array<Chain*, 2> eyes, const StereoParams& params, 
     return ok;
 }
 
+void poll_view_key(int key) {
+    auto& r = runtime();
+    const bool down = key && (GetAsyncKeyState(key) & 0x8000) != 0;
+    if (down && !r.view_key_down && !shared().ui_open.load() && !shared().game_menu.load()) {
+        DWORD process = 0;
+        GetWindowThreadProcessId(GetForegroundWindow(), &process);
+        if (process == GetCurrentProcessId()) {
+            toggle_view();
+            log_info(current_settings().view_mode == 0 ? "First person (feet-only preference restored)." : "Third-person follow camera (full outfit).");
+        }
+    }
+    r.view_key_down = down;
+}
 void poll_recenter_key(int key) {
     auto& r = runtime();
     if (!key) return;
@@ -583,6 +596,7 @@ void publish_rates(double now) {
             camera_active(now) ? "VR camera" : snapshot.theater_active ? "flat screen" : "idle",
             snapshot.image_width, snapshot.image_height, r.image_format, fov, current_settings().frame_lag, camera_thread,
             GetCurrentThreadId()));
+        log_info(std::format("GPU: stereo two-eye draw {:.2f} ms (excludes game rendering, copies and compositor).", r.stereo.gpu_ms()));
         log_info(std::format("tracking: {}, positional {}; head offset ({:.3f}, {:.3f}, {:.3f}) m; applied camera ({:.3f}, {:.3f}, {:.3f}) m.",
             s.position_valid.load() ? (s.position_tracked.load() ? "6DoF tracked" : "6DoF inferred") : "rotation only",
             current_settings().positional ? "on" : "off", s.head_motion[0].load(), s.head_motion[1].load(), s.head_motion[2].load(),
@@ -590,6 +604,7 @@ void publish_rates(double now) {
         r.pairing = {};
     }
     update_status([&](Status& st) {
+        st.stereo_gpu_ms = r.stereo.gpu_ms();
         st.present_hz = present_hz;
         st.camera_hz = camera_hz;
         st.display_hz = period > 0 ? static_cast<float>(1e9 / static_cast<double>(period)) : 0.0f;
@@ -760,7 +775,10 @@ void on_present(IDXGISwapChain3* chain, ID3D12CommandQueue* queue) noexcept {
             teardown("The game recreated its swapchain; restarting VR.", 0);
             return;
         }
-        if (options.enabled) poll_recenter_key(options.recenter_key);
+        if (options.enabled) {
+            poll_recenter_key(options.recenter_key);
+            poll_view_key(options.view_toggle_key);
+        }
         if (!r.frame_begun) return;
         // Side-by-side input: a stereo shader (ReShade) draws into the frame inside the
         // game's Present, after this hook runs. Submit once Present returns instead, from

@@ -49,15 +49,23 @@ void vr_controls(SkateMenu& menu, const Model& model) {
         if (vr_status.running) {
             info(menu, "Frames", std::format("headset {:.0f} Hz, game {:.0f} fps, VR camera {:.0f} fps",
                 vr_status.display_hz, vr_status.present_hz, vr_status.camera_hz));
+            if (vr_status.stereo_gpu_ms > 0)
+                info(menu, "Stereo GPU", std::format("{:.2f} ms for both eyes (game rendering and compositor are additional)", vr_status.stereo_gpu_ms));
             info(menu, "Image", std::format("game {}x{}, headset wants {}x{} per eye", vr_status.image_width,
                 vr_status.image_height, vr_status.recommended_width, vr_status.recommended_height));
         }
+        if (primary_button(menu, options.view_mode == 0 ? "Switch to third-person follow camera" : "Switch to first person", vr_status.running)) {
+            options.view_mode = options.view_mode == 0 ? 1 : 0;
+            changed = true;
+        }
+        note("F9 switches first person / follow camera. Third person restores your full outfit; returning to first person restores your body visibility choice.");
         if (primary_button(menu, "Recenter view", vr_status.running)) vr::recenter();
         if (primary_button(menu, "Reset VR camera defaults", true)) {
             // Every VR value back to the tested defaults; VR stays on or off.
             vr::Settings recommended;
             recommended.enabled = options.enabled;
             recommended.recenter_key = options.recenter_key;
+            recommended.view_toggle_key = options.view_toggle_key;
             options = recommended;
             changed = true;
         }
@@ -71,7 +79,7 @@ void vr_controls(SkateMenu& menu, const Model& model) {
                 vr_status.head_motion[0] * 100, vr_status.head_motion[1] * 100, vr_status.head_motion[2] * 100));
         }
         info(menu, "FeetOnly costume", vr::feet_only_installed() ? "Installed" : "Not installed");
-        note("For image clarity, run ReSkateVRSetup.exe before launching. Choose 2592 or 2880 square, native resolution, motion blur and depth of field off.");
+        note("For image clarity, run ReSkateVRSetup.exe before launching. Start with Performance; check the actual game image size above. Keep motion blur and depth of field off.");
         end_card();
 
         // ---- Presets.
@@ -219,7 +227,7 @@ void vr_controls(SkateMenu& menu, const Model& model) {
             options.controllers = control_device == 1;
             changed = true;
         }
-        if (!options.controllers) note("Use your DualSense normally. F8 recenters the headset. Touch input is disabled.");
+        if (!options.controllers) note("Use your DualSense normally. F8 recenters the headset; F9 toggles first person / follow camera. Touch input is disabled.");
         if (options.controllers) {
             info(menu, "Right hand", "A push, B other push, trigger RB, grip grab (RT)");
             info(menu, "Left hand", "X board on/off, Y stop, trigger LB, grip grab (LT)");

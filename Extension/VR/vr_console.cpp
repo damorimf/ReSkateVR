@@ -181,6 +181,7 @@ void register_vr_commands(Commands& registry) {
         &Settings::chat_view_y, -Limits::chat_view_offset_max, Limits::chat_view_offset_max);
     real(registry, "vr.theater_width", "Flat screen width in metres", &Settings::theater_width, Limits::theater_width_min,
         Limits::theater_width_max);
+    whole(registry, "vr.view_key", "Virtual-key code that switches first/third person (0 none, 120 F9)", &Settings::view_toggle_key, 0, 0xfe);
     whole(registry, "vr.recenter_key", "Virtual-key code that recentres the view (0 = none; 119 = F8)", &Settings::recenter_key, 0,
         0xfe);
 }

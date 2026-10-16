@@ -42,6 +42,8 @@ public:
     bool render(ID3D12CommandQueue* queue, const std::array<ID3D12Resource*, 2>& targets, DXGI_FORMAT target_format,
         const StereoParams& params, bool raw, std::string& error);
     bool wait_idle(DWORD timeout_ms) noexcept;
+    // Last completed two-eye draw, measured on the GPU without a new CPU wait.
+    float gpu_ms() const noexcept { return gpu_ms_; }
 
 private:
     static constexpr UINT slots = 3;
@@ -63,6 +65,11 @@ private:
     HANDLE event_ = nullptr;
     UINT64 next_fence_ = 0;
     UINT slot_ = 0;
+    Microsoft::WRL::ComPtr<ID3D12QueryHeap> timestamps_;
+    Microsoft::WRL::ComPtr<ID3D12Resource> timing_readback_;
+    std::array<bool, slots> timing_pending_{};
+    std::array<UINT64, slots> timing_frequency_{};
+    float gpu_ms_ = 0;
     // PIXEL_SHADER_RESOURCE between uses; widened_ is the near-dilated depth the eyes read.
     Microsoft::WRL::ComPtr<ID3D12Resource> kept_, kept_depth_, widened_;
     DXGI_FORMAT kept_format_ = DXGI_FORMAT_UNKNOWN;

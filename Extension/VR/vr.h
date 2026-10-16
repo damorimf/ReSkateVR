@@ -133,6 +133,7 @@ struct Settings {
     float seat_side = -0.14f;
     float seat_forward_foot = -0.45f, seat_up_foot = 0.17f, seat_side_foot = -0.14f;
     // Virtual-key code that recenters the view; 0 disables it. Default F8.
+    int view_toggle_key = 0x78; // F9: first person / third-person follow camera
     int recenter_key = 0x77;
 };
 
@@ -165,6 +166,7 @@ bool set_settings(const Settings& settings) noexcept;
 // True once after any change, for the profile to save.
 bool take_settings_changed() noexcept;
 void recenter() noexcept;
+void toggle_view() noexcept;
 
 // Named sets of VR settings. Built-in presets come first and cannot be deleted;
 // saved ones live in the local profile. Applying keeps VR on/off and the
@@ -206,6 +208,7 @@ struct Status {
     std::uint32_t image_width = 0, image_height = 0;
     std::uint32_t recommended_width = 0, recommended_height = 0;
     float display_hz = 0, present_hz = 0, camera_hz = 0;
+    float stereo_gpu_ms = 0; // last completed two-eye depth draw; 0 until measured
     float render_fov_degrees = 0;
     std::uint64_t frames_submitted = 0, eye_images = 0, repeated_images = 0;
     // Thread ids of the last VR camera write and Present, for diagnosing how

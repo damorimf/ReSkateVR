@@ -58,6 +58,7 @@ bool valid(const Settings& v) noexcept {
         in(v.third_height, Limits::third_height_min, Limits::third_height_max) &&
         in(v.theater_distance, Limits::theater_distance_min, Limits::theater_distance_max) &&
         in(v.theater_width, Limits::theater_width_min, Limits::theater_width_max) &&
+        v.view_toggle_key >= 0 && v.view_toggle_key <= 0xfe &&
         v.recenter_key >= 0 && v.recenter_key <= 0xfe;
 }
 
@@ -128,6 +129,7 @@ bool apply_preset(const std::string& name) noexcept {
                 auto next = preset.settings;
                 next.enabled = current.enabled;
                 next.recenter_key = current.recenter_key;
+                next.view_toggle_key = current.view_toggle_key;
                 return set_settings(next);
             }
     } catch (...) {}
@@ -215,6 +217,14 @@ void observe_gamepad(std::uint32_t user, std::int16_t right_x, std::uint8_t trig
     for (const auto& x : pad_right_x)
         if (std::abs(x.load(std::memory_order_relaxed)) > std::abs(strongest)) strongest = x.load(std::memory_order_relaxed);
     right_stick_x.store(strongest, std::memory_order_relaxed);
+}
+void toggle_view() noexcept {
+    auto& s = detail::shared();
+    {
+        std::lock_guard lock(s.settings_mutex);
+        s.settings.view_mode = s.settings.view_mode == 0 ? 1 : 0;
+    }
+    s.settings_changed.store(true, std::memory_order_release);
 }
 void recenter() noexcept { detail::shared().recenter_generation.fetch_add(1, std::memory_order_acq_rel); }
 

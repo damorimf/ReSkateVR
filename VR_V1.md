@@ -32,7 +32,7 @@ RESKATE_ENABLE_OPENXR_VR option is not used by this source tree.
 ## V1 completion gates
 
 - [x] Rebased integration compiles with warnings as errors (local MSVC Release build).
-- [x] VR pose, camera transition, camera cycle, saved graphics settings and multiplayer regressions pass (51 local CTest checks).
+- [x] VR pose, camera transition, camera cycle, saved graphics settings and multiplayer regressions pass (52 local CTest checks).
 - [ ] Stereo disocclusion handling improved and checked in the headset.
 - [x] Repeatable packaging includes the pinned x64 OpenXR loader and licenses.
 - [x] Separate local install contains the supported game build and VR binaries.
@@ -118,12 +118,34 @@ candidate is not yet headset-validated for comfort or frame pacing.
   avoiding repeated depth reprojection while retaining every OpenXR submission.
 - FeetOnly uses head-only joint hiding when its costume is available, avoiding
   redundant waist shrinking that could distort descendant joints or the board.
-- All 51 local regression tests pass, including animation rejection, immediate
+- All 52 local regression tests pass, including animation rejection, immediate
   locomotion/headset lean, and frame-rate-independent crouch filtering.
 - Next local test disables bail/grab camera changes, uses Feet only on board and
   on foot, and lowers the requested square image size from 2880 to 2304. Actual
   backbuffer dimensions must be checked: previous requests produced images 25%
   larger, consistent with a DPI scaling issue that remains under investigation.
+
+## Follow camera and rendering diagnostics
+
+The next headset test confirmed that shoes-only now works, but head turns still
+stutter. Logs at 2880x2880 show about 60 camera updates/s and 95-107 presents/s,
+short of the headset's 120 Hz target. Two-eye image counts increase by about 600
+per five seconds, confirming duplicate depth draws are skipped. The first launch
+exited during loading without a captured fault; the retry reached gameplay and
+later recorded a normal native shutdown. This does not yet establish stability.
+
+- F9 switches first person / third-person follow camera. The VR Setup page also
+  has a switch button. `vr.view_key` changes the shortcut (120 = F9, 0 disables).
+- FeetOnly applies only in first person; third person restores the original live
+  outfit, and switching back reapplies the stored feet-only choice.
+- Optional GPU timestamps measure the actual two-eye depth draw, shown on Setup
+  and in logs. Readback uses an already-completed allocator fence, adding no new
+  CPU wait. The metric excludes the game, copies, depth dilation and compositor.
+- A D3D12 WARP integration test runs copy/dilation/two-eye draws over repeated
+  allocator reuse and checks completed timing and destroy/recreate behavior.
+- Requested 2304 square was verified to produce a physical 2880 square image on
+  this PC. The desktop shortcut and launcher now request 2304; the setup helper's
+  size semantics still need a portable fix before release.
 
 ## Packaging and installation
 

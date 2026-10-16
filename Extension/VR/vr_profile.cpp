@@ -59,6 +59,7 @@ constexpr const char* chat_on_hand = "VR.ChatOnHand";
 constexpr const char* chat_view_size = "VR.ChatViewSize";
 constexpr const char* chat_view_x = "VR.ChatViewX";
 constexpr const char* chat_view_y = "VR.ChatViewY";
+constexpr const char* view_toggle_key = "VR.ViewToggleKey";
 constexpr const char* recenter_key = "VR.RecenterKey";
 }
 constexpr ULONGLONG save_delay_ms = 750;
@@ -129,6 +130,7 @@ const std::array fields{
     Field{.key = key::chat_view_size, .real = &Settings::chat_view_size},
     Field{.key = key::chat_view_x, .real = &Settings::chat_view_x},
     Field{.key = key::chat_view_y, .real = &Settings::chat_view_y},
+    Field{.key = key::view_toggle_key, .whole = &Settings::view_toggle_key},
     Field{.key = key::recenter_key, .whole = &Settings::recenter_key},
 };
 
